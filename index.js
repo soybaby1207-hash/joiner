@@ -10,76 +10,47 @@ const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/155965508388768975
 let detectedServers = [];
 
 const ALLOWED_BRAINROTS = [
-    "Garama and Madundung",
-    "Dragon Cannelloni",
-    "Hydra Dragon Cannelloni",
-    "Strawberry Elephant",
-    "Headless Horseman",
-    "Meowl",
-    "John Pork",
-    "Skibidi Toilet",
-    "Los Dragons",
-    "Phoenix",
-    "Griffin",
-    "Dragon Aquanini",
-    "Dragon Gingerini",
-    "Dragon Skeletonini",
-    "Plant Bros",
-    "Signore Carapace",
-    "Moby Bros",
-    "Love Love Bear",
-    "Hydra Serpent",
-    "Arcadragon",
-    "Hydra Bunny",
-    "Antonio",
-    "Elefanto Frigo",
-    "Rico Dinero",
-    "Rubrikiko",
-    "Pancake and Syrup",
-    "Kalika Bros",
-    "Tirilikalika Tirilikalako",
-    "Globa Steppa",
-    "Dug Dug Dug",
-    "La Supreme Combinasion",
-    "La Casa Boo",
-    "Fishino Clownino",
-    "Cerberus",
-    "Duggy Bros",
-    "Kraken",
-    "Venuspino",
-    "Gorillo Subwoofero",
-    "Foxini Lanternini"
+    "Garama and Madundung", "Dragon Cannelloni", "Hydra Dragon Cannelloni",
+    "Strawberry Elephant", "Headless Horseman", "Meowl", "John Pork",
+    "Skibidi Toilet", "Los Dragons", "Phoenix", "Griffin", "Dragon Aquanini",
+    "Dragon Gingerini", "Dragon Skeletonini", "Plant Bros", "Signore Carapace",
+    "Moby Bros", "Love Love Bear", "Hydra Serpent", "Arcadragon", "Hydra Bunny",
+    "Antonio", "Elefanto Frigo", "Rico Dinero", "Rubrikiko", "Pancake and Syrup",
+    "Kalika Bros", "Tirilikalika Tirilikalako", "Globa Steppa", "Dug Dug Dug",
+    "La Supreme Combinasion", "La Casa Boo", "Fishino Clownino", "Cerberus",
+    "Duggy Bros", "Kraken", "Venuspino", "Gorillo Subwoofero", "Foxini Lanternini"
+];
+
+const VALID_MATERIALS = [
+    "Normal", "Gold", "Diamond", "Blotrot", "Candy", "Lava", 
+    "Galaxy", "Yin Yang", "Radioactive", "Cursed", "Rainbow", 
+    "Phantom", "Cyber", "Divine", "Eclipse", "Crystal"
 ];
 
 app.post('/api/report', async (req, res) => {
-    const { placeId, jobId, brainrotName, category, incomeRate, botName, imageUrl } = req.body;
+    const { placeId, jobId, brainrotName, material, incomeRate, botName, imageUrl } = req.body;
 
     if (!placeId || !jobId || !brainrotName) {
         return res.status(400).json({ error: "Faltan datos requeridos" });
     }
 
-    const isAllowed = ALLOWED_BRAINROTS.includes(brainrotName) || 
-                      (category && (category.toLowerCase().includes("secreta") || category.toLowerCase().includes("og")));
-    
-    if (!isAllowed) {
-        return res.json({ success: true, message: "Ignorado" });
-    }
+    const matText = material && VALID_MATERIALS.includes(material) ? material : "Normal";
 
     const newDetection = {
         id: Date.now(),
         placeId,
         jobId,
         brainrotName,
-        category: category || "Secreta/OG",
+        material: matText,
         incomeRate: incomeRate || "$1B/s",
         botName: botName || "Bot",
         timestamp: new Date().toISOString()
     };
 
-    const exists = detectedServers.some(s => s.jobId === jobId && s.brainrotName === brainrotName);
+    const exists = detectedServers.some(s => s.jobId === jobId && s.brainrotName === brainrotName && s.material === matText);
     if (!exists) {
         detectedServers.unshift(newDetection);
-        if (detectedServers.length > 20) detectedServers.pop();
+        if (detectedServers.length > 30) detectedServers.pop();
     }
 
     if (DISCORD_WEBHOOK_URL) {
@@ -89,9 +60,9 @@ app.post('/api/report', async (req, res) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     embeds: [{
-                        title: "🌾 BABYLIVE FINDER",
-                        color: 16766720,
-                        description: `**${brainrotName}**\n🧬 💰 - 🪙 **${newDetection.incomeRate}**`,
+                        title: "💎 BABYLIVE RADAR [NUEVO MATERIAL DETECTADO]",
+                        color: 3066993,
+                        description: `**${brainrotName}**\n🎨 Material/Rareza: **${matText}**\n💰 Ingresos: **${newDetection.incomeRate}**`,
                         thumbnail: imageUrl ? { url: imageUrl } : undefined,
                         fields: [
                             { 
@@ -100,9 +71,7 @@ app.post('/api/report', async (req, res) => {
                                 inline: false 
                             }
                         ],
-                        footer: {
-                            text: `💰 · Babylive System`
-                        },
+                        footer: { text: `🤖 Reportado por ${newDetection.botName} · Babylive Cloud` },
                         timestamp: new Date()
                     }]
                 })
@@ -112,7 +81,7 @@ app.post('/api/report', async (req, res) => {
         }
     }
 
-    console.log(`[+] ¡Babylive Detectó!: ${brainrotName} (${newDetection.incomeRate}) por ${newDetection.botName}`);
+    console.log(`[+] Detectado: ${brainrotName} [Material: ${matText}]`);
     return res.json({ success: true });
 });
 
